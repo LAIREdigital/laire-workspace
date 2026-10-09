@@ -7,6 +7,11 @@ import { SheetStore } from "./sheet-store";
 import { TABLES } from "./schema";
 
 const DEFAULT_STAFF_PASSWORD = "LAIRE2026!";
+// Bump when tabs or columns change, so live sheets set themselves up again.
+const SETUP_VERSION = "1";
+
+// The whole browser app, inlined by the build so only one file is pasted.
+declare const INDEX_HTML: string;
 
 function props() {
   return PropertiesService.getScriptProperties();
@@ -39,7 +44,8 @@ const env: Env = {
 };
 
 export function doGet() {
-  return HtmlService.createHtmlOutputFromFile("Index")
+  ready();
+  return HtmlService.createHtmlOutput(INDEX_HTML)
     .setTitle("LAIRE Workspace")
     .addMetaTag("viewport", "width=device-width, initial-scale=1")
     .setFaviconUrl("https://www.lairedigital.com/hubfs/Logos/LaireA_Blue.png");
@@ -47,11 +53,27 @@ export function doGet() {
 
 // Called from the browser with google.script.run.api(method, argsJson).
 export function api(method: string, argsJson: string) {
+  ready();
   const store = SheetStore.open();
   return JSON.stringify(dispatch(new Api(store, env), method, JSON.parse(argsJson || "[]")));
 }
 
-// Run once from the editor: creates the tabs and the files folder.
+// Sets the sheet up the first time the app is opened. Nothing to run by hand.
+function ready() {
+  if (props().getProperty("SETUP_VERSION") === SETUP_VERSION) return;
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    if (props().getProperty("SETUP_VERSION") !== SETUP_VERSION) {
+      setup();
+      props().setProperty("SETUP_VERSION", SETUP_VERSION);
+    }
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// Creates the tabs and the files folder. Runs on its own via ready().
 // The staff password lives in Project Settings > Script Properties > STAFF_PASSWORD.
 export function setup() {
   const p = props();

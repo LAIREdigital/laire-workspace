@@ -86,7 +86,7 @@ export function AppProvider({
     () => ({ snap, token, staff: snap.me.role === "staff", run, refresh, signOut }),
     [snap, token, run, refresh, signOut],
   );
-  return <AppContext value={value}>{children}</AppContext>;
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
 export function useApp() {

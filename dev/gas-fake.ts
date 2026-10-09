@@ -165,10 +165,11 @@ export function makeGas(book = new FakeBook()) {
       },
     },
     HtmlService: {
-      createHtmlOutputFromFile: (name: string) => {
+      createHtmlOutput: (html: string) => {
         const out = {
-          file: name,
+          html,
           title: "",
+          getContent: () => html,
           setTitle: (t: string) => ((out.title = t), out),
           addMetaTag: () => out,
           setFaviconUrl: () => out,

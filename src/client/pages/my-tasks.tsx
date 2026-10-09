@@ -53,7 +53,16 @@ export function MyTasksPage({ route }: { route: Route }) {
           <section className="space-y-6">
             {!staff && <h2 className="text-lg font-bold">Assigned to you</h2>}
             {mine.length === 0 ? (
-              <EmptyState title="Inbox zero for tasks">Nothing open is assigned to you. Nice.</EmptyState>
+              snap.companies.length === 0 ? (
+                <EmptyState title="Welcome to LAIRE Workspace">
+                  <p>Start by adding your first client company, then a project, then tasks.</p>
+                  <Link href="/companies/new" className="btn-primary mt-4">
+                    Add a company
+                  </Link>
+                </EmptyState>
+              ) : (
+                <EmptyState title="Inbox zero for tasks">Nothing open is assigned to you. Nice.</EmptyState>
+              )
             ) : (
               ORDER.map((b) => {
                 const list = mine.filter((t) => bucket(t) === b);

@@ -7,9 +7,12 @@ import { loadCodeGs } from "../dev/gas-fake";
 
 type Snap = { me: { name: string; role: string }; tasks: { id: string; title: string; due_date: string | null; is_internal: boolean }[]; attachments: { id: string }[] };
 
-test("Code.gs: setup, demo data, sign in, edit, files", () => {
+test("Code.gs: sets itself up, sign in, edit, files", () => {
   const gs = loadCodeGs();
-  gs.g.setup();
+  // Opening the app is all it takes: no setup step.
+  const page = gs.g.doGet() as { getContent(): string; title: string };
+  assert.equal(page.title, "LAIRE Workspace");
+  assert.match(page.getContent(), /<div id="root">/);
   const names = gs.book.sheets.map((s) => s.name);
   assert.ok(names.includes("Tasks") && names.includes("Sessions") && !names.includes("Sheet1"));
   assert.deepEqual(gs.book.getSheetByName("Tasks")!.data[0].slice(0, 3), ["id", "project_id", "milestone_id"]);
@@ -18,9 +21,6 @@ test("Code.gs: setup, demo data, sign in, edit, files", () => {
 
   gs.g.loadDemoData();
   assert.throws(() => gs.g.loadDemoData(), /already has data/);
-
-  const page = gs.g.doGet() as { file: string; title: string };
-  assert.deepEqual([page.file, page.title], ["Index", "LAIRE Workspace"]);
 
   assert.equal(gs.call("checkPassword", "wrong").error, "That password did not work.");
   const check = gs.call("checkPassword", "LAIRE2026!").data as { staff: { id: string; name: string }[] };
@@ -64,4 +64,13 @@ test("Code.gs: setup, demo data, sign in, edit, files", () => {
   assert.ok([...gs.files.values()].every((f) => f.trashed));
 
   assert.equal(gs.call("nope", token).error, "Unknown action");
+});
+
+test("Code.gs: a fresh sheet works from the first API call", () => {
+  const gs = loadCodeGs();
+  const check = gs.call("checkPassword", "LAIRE2026!").data as { staff: unknown[] };
+  assert.deepEqual(check.staff, []);
+  const { token } = gs.call("login", "LAIRE2026!", { name: "Sam Barth" }).data as { token: string };
+  const snap = gs.call("snapshot", token).data as { me: { name: string; role: string } };
+  assert.deepEqual([snap.me.name, snap.me.role], ["Sam Barth", "staff"]);
 });

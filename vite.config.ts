@@ -8,6 +8,15 @@ import { viteSingleFile } from "vite-plugin-singlefile";
 export default defineConfig({
   root: "src/client",
   plugins: [react(), tailwindcss(), viteSingleFile()],
+  // Preact keeps the page small: Apps Script serves it on every load.
+  resolve: {
+    alias: {
+      react: "preact/compat",
+      "react-dom/client": "preact/compat/client",
+      "react-dom": "preact/compat",
+      "react/jsx-runtime": "preact/jsx-runtime",
+    },
+  },
   build: {
     outDir: "../../build/client",
     emptyOutDir: true,

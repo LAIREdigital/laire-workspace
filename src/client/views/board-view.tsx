@@ -1,4 +1,4 @@
-import { useOptimistic, useState, useTransition } from "react";
+import { useState } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -36,13 +36,11 @@ export function BoardView({
   people: Person[];
   taskBase: string;
 }) {
-  // Cards move instantly; the server copy replaces this once the action lands.
-  const [items, moveOptimistic] = useOptimistic(tasks, (state, move: { id: string; status: TaskStatus }) =>
-    state.map((t) => (t.id === move.id ? { ...t, status: move.status } : t)),
-  );
+  // Cards move at once; the move is dropped when the server answers.
+  const [moves, setMoves] = useState<Record<string, TaskStatus>>({});
   const [error, setError] = useState("");
-  const [, start] = useTransition();
   const { run } = useApp();
+  const items = tasks.map((t) => (moves[t.id] ? { ...t, status: moves[t.id] } : t));
   const byId = new Map(people.map((p) => [p.id, p]));
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -54,10 +52,14 @@ export function BoardView({
     const id = String(e.active.id);
     const task = items.find((t) => t.id === id);
     if (!status || !task || task.status === status) return;
-    start(async () => {
-      moveOptimistic({ id, status });
-      const r = await run("updateTask", id, { status });
+    setMoves((m) => ({ ...m, [id]: status }));
+    run("updateTask", id, { status }).then((r) => {
       if (r.error) setError(r.error);
+      setMoves((m) => {
+        const rest = { ...m };
+        delete rest[id];
+        return rest;
+      });
     });
   }
 

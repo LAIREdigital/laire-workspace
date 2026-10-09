@@ -38,7 +38,11 @@ export function Login({ onSignedIn }: { onSignedIn: (token: string) => void }) {
         password,
       ),
     );
-    if (r) setStep(r);
+    if (r) {
+      // First staff member on a fresh sheet: skip straight to entering a name.
+      setPersonId(r.kind === "staff" && r.staff.length === 0 ? "new" : "");
+      setStep(r);
+    }
   }
 
   async function signIn(e: React.FormEvent) {
@@ -79,17 +83,19 @@ export function Login({ onSignedIn }: { onSignedIn: (token: string) => void }) {
             <form onSubmit={signIn} className="space-y-4">
               <h1 className="text-center text-lg font-bold">Who are you?</h1>
               <ErrorNote error={error} />
-              <select required value={personId} onChange={(e) => setPersonId(e.target.value)} className="input py-2">
-                <option value="" disabled>
-                  Pick your name
-                </option>
-                {step.staff.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
+              {step.staff.length > 0 && (
+                <select required value={personId} onChange={(e) => setPersonId(e.target.value)} className="input py-2">
+                  <option value="" disabled>
+                    Pick your name
                   </option>
-                ))}
-                <option value="new">I am not on the list</option>
-              </select>
+                  {step.staff.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                  <option value="new">I am not on the list</option>
+                </select>
+              )}
               {personId === "new" && (
                 <>
                   <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className="input py-2" />
