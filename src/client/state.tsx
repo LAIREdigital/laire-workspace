@@ -3,7 +3,8 @@ import type { Method } from "../server/api";
 import type { Snapshot } from "../shared/types";
 import { call, CallError } from "./api";
 
-const TOKEN_KEY = "laire-workspace-token";
+// The demo build keeps its own key, since its sessions vanish on reload.
+const TOKEN_KEY = document.title.includes("Demo") ? "laire-workspace-demo-token" : "laire-workspace-token";
 
 export function readToken() {
   try {
